@@ -262,33 +262,34 @@ Answer the following question based strictly on the provided context. Do not use
 {context}
 </context>
 
-Extract and list product names mentioned in the context, and ensure the following:
-1. Only use product names explicitly mentioned in the context. Do NOT hallucinate or create product names.
-2. Include at least 5 product entries. Do not add names from outside the context.
+Extract and list parent_asin mentioned in the context, and ensure the following:
+1. Only use parent_asin explicitly mentioned in the context. Do NOT hallucinate or create parent_asin.
+2. Try to include at least 5 parent_asin. Do not add names from outside the context.
 3. Output the results formatted as shown below.
 
 [
   {{
-    "product_name": "Product Name"
+    "parent_asin": "parent_asin"
   }},
   {{
-    "product_name": "Product Name"
+    "parent_asin": "parent_asin"
   }},
   {{
-    "product_name": "Product Name"
+    "parent_asin": "parent_asin"
   }},
   {{
-    "product_name": "Product Name"
+    "parent_asin": "parent_asin"
   }},
   {{
-    "product_name": "Product Name"
+    "parent_asin": "parent_asin"
   }}
 ]
 
 IMPORTANT:
-- Use only product names from the provided context. You must find the 5 most relevant products from the context products names.
-- Do NOT add explanations, reasoning, or any additional text outside the JSON list.
+- Use only parent_asin from the provided context. You must find relevant products from the context, linked with the question of the user.
+- Do NOT add ANY explanations, reasoning, or any additional text outside the JSON list.
 
+Here is the question from the customer:
 Question: {input}
 """)
 
@@ -313,8 +314,13 @@ Here is the question from the customer:
 Question: {input}
 
 
-Write a response to the question as a great coach would do. Avoid mentioning the description of the user but use it to adapt the answer.:
-""")
+Guidelines for your response:
+- ⁠Be precise and to the point.
+- ⁠Avoid unnecessary details or long explanations.
+- Limit your response to 3-4 sentences at most.
+
+Now, provide your answer to the question as a great coach would do:
+                                                          """)
 
 prompt_cross_sales = ChatPromptTemplate.from_template("""Answer the following task by using only the provided context:
 
@@ -375,7 +381,9 @@ def get_response(user, conversation, cart, purchase):
     if qualify["answer"] == "PRODUCT":
         search = retrieval_chain_search.invoke({"input": qu})
         proposed_products_data = json.loads(search['answer'])
-        proposed_products = [product["product_name"] for product in proposed_products_data]
+        matching_products = filtered_df[filtered_df["parent_asin"].isin(proposed_products_data)]
+        proposed_products = matching_products["product_name"].tolist()
+        #proposed_products = [product["product_name"] for product in proposed_products_data]
         ranked_products = rank_products(user_vect, proposed_products, users, filtered_df)
         response = retrieval_chain_response_search.invoke({"input": qu, "selected_products": ranked_products, "description": user_description, "conversation": conv})
     elif qualify["answer"] == "ADVICE":
