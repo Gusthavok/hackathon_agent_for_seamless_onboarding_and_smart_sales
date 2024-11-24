@@ -308,9 +308,9 @@ def create_user(username:str, name: str, email: str, phone: str) -> bool:
         return False
 
 def user_exist(db: Session, username: str):
-    return db.query(Users).filter(Users.username == username).first() is not None
+    return db.query(Users).filter(Users.username == username).first is not None
 
 def get_answer_bot(db: Session, conversation: list[dict], username: str, cart: dict):
-    user = db.query(Users).filter(Users.username == username).first()
+    user = db.query(Users).filter(Users.username == username).first
     reponse = get_response(user, conversation, cart, "")
     return reponse, "/"

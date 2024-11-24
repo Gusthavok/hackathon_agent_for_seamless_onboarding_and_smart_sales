@@ -7,15 +7,15 @@ Vous pouvez ajouter dans le ".bashrc" des élèves une petite section avec quelq
 
 # PgSQL
 export PATH=/usr/local/postgresql-17.0/bin:$PATH
-alias pg_start='pg_ctl -D /Data/augustin.kheng/data/data -l /Data/augustin.kheng/data/logfile start'
-alias pg_stop='pg_ctl -D /Data/augustin.kheng/data/data -l /Data/augustin.kheng/data/logfile stop'
-alias pg_back='[[ -d /users/misc-a/INF553-2018/augustin.kheng/data-backup ]] && mv /users/misc-a/INF553-2018/augustin.kheng/data-backup /Data/augustin.kheng/data-backup.$(date +%F.%H-%M-%S); pg_basebackup -D /users/misc-a/INF553-2018/augustin.kheng/data-backup -Ft -z -P'
-alias pg_rest='[[ -d /Data/augustin.kheng/data ]] && mv /Data/augustin.kheng/data /Data/augustin.kheng/data.$(date +%F.%H-%M-%S); install -d -m 0700 /Data/augustin.kheng/data/data; tar -xvC /Data/augustin.kheng/data/data -f /users/misc-a/INF553-2018/augustin.kheng/data-backup/base.tar.gz &> /dev/null; tar -xvC /Data/augustin.kheng/data/data/pg_wal -f /users/misc-a/INF553-2018/augustin.kheng/data-backup/pg_wal.tar.gz &> /dev/null'
+alias pg_start='pg_ctl -D /Data/harold.ngoupeyou/data/data -l /Data/harold.ngoupeyou/data/logfile start'
+alias pg_stop='pg_ctl -D /Data/harold.ngoupeyou/data/data -l /Data/harold.ngoupeyou/data/logfile stop'
+alias pg_back='[[ -d /users/misc-a/INF553-2018/harold.ngoupeyou/data-backup ]] && mv /users/misc-a/INF553-2018/harold.ngoupeyou/data-backup /Data/harold.ngoupeyou/data-backup.$(date +%F.%H-%M-%S); pg_basebackup -D /users/misc-a/INF553-2018/harold.ngoupeyou/data-backup -Ft -z -P'
+alias pg_rest='[[ -d /Data/harold.ngoupeyou/data ]] && mv /Data/harold.ngoupeyou/data /Data/harold.ngoupeyou/data.$(date +%F.%H-%M-%S); install -d -m 0700 /Data/harold.ngoupeyou/data/data; tar -xvC /Data/harold.ngoupeyou/data/data -f /users/misc-a/INF553-2018/harold.ngoupeyou/data-backup/base.tar.gz &> /dev/null; tar -xvC /Data/harold.ngoupeyou/data/data/pg_wal -f /users/misc-a/INF553-2018/harold.ngoupeyou/data-backup/pg_wal.tar.gz &> /dev/null'
 
 Par la suite il sera assez simple à travailler localement:
 
-[cher ~]$ mkdir -p /Data/augustin.kheng/data/data
-[cher ~]$ initdb -D /Data/augustin.kheng/data/data
+[cher ~]$ mkdir -p /Data/harold.ngoupeyou/data/data
+[cher ~]$ initdb -D /Data/harold.ngoupeyou/data/data
 The files belonging to this database system will be owned by user "tbp".
 This user must also own the server process.
 
