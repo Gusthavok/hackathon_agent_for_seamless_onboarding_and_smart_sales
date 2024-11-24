@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CartProvider>
           <div className="flex h-screen overflow-hidden">
             <div className="flex-grow overflow-auto">{children}</div>
-            <div className="w-1/4 min-w-[300px] border-l border-gray-200 hidden md:block">
+            <div className="w-1/2 min-w-[300px] border-l border-gray-200 hidden md:block">
               <ChatbotInterface />
             </div>
           </div>

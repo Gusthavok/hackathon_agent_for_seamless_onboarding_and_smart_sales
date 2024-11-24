@@ -20,15 +20,23 @@ from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 import random
 import json
+data = []
 
-# Charger le fichier JSON
-df = pd.read_json("final_running_products", lines=True)
+# Ouvrir et lire le fichier JSON ligne par ligne
+with open("./utils/final_running_products", "r") as file:
+    for line in file:
+        # Convertir chaque ligne en un dictionnaire Python
+        data.append(json.loads(line))
+
+# Créer un DataFrame à partir des données
+df = pd.DataFrame(data)
 
 api_key= "Hh7heFfENTq0BZAGLaqBodGxkose79gA"
 client = Mistral(api_key=api_key)
 
 # Filtrer le DataFrame pour exclure les lignes où 'price' est "None"
 filtered_df = df[df['price'] != "None"]
+filtered_df = filtered_df.sample(500, replace=False)
 filtered_df['average_rating'] = filtered_df['average_rating']/5
 filtered_df = filtered_df.drop_duplicates(subset='parent_asin', keep='first')
 
@@ -47,6 +55,8 @@ user_vect = {
 
 def describe_user(user):
     description = []
+    
+    user = generate_user()
     
     for key, value in user.items():
         if key == 'purchase':
@@ -143,7 +153,10 @@ def rank_products(input_user, proposed_products, all_users, filtered_df):
     # Step 4: Rank products by score
     ranked_products = sorted(product_scores.items(), key=lambda x: x[1], reverse=True)
     ranking = [item[0] for item in ranked_products]
-    ranking_final = [ranking[0], ranking[1]]
+    if len(ranking)>=2 : 
+        ranking_final = [ranking[0], ranking[1]]
+    else:
+        ranking_final=ranking
     return ranking_final
 
 documents = []
@@ -326,15 +339,17 @@ Lastly, make sure to listen to your body and take rest days as needed. Incorpora
 I hope these tips are helpful as you prepare for your marathon! Let me know if you have any other questions.""", "isUser": False}, {"text": "Can you buid me a training program ?", "isUser": True}]
 
 def get_response(user, conversation, cart, purchase):
+    print("conversation : ", conversation)
     conv, qu = getConversationAndQuestion(conversation)
     user_description = describe_user(user)
     qualify = retrieval_chain_qualify.invoke({"input": qu})
     if qualify["answer"] == "PRODUCT":
         search = retrieval_chain_search.invoke({"input": qu})
+        print("answer: ", search['answer'])
         proposed_products_data = json.loads(search['answer'])
         proposed_products = [product["product_name"] for product in proposed_products_data]
         ranked_products = rank_products(user_vect, proposed_products, users, filtered_df)
         response = retrieval_chain_response_search.invoke({"input": qu, "selected_products": ranked_products, "description": user_description, "conversation": conv})
     elif qualify["answer"] == "ADVICE":
         response = retrieval_chain_advice.invoke({"input": qu, "description": user_description, "conversation": conv})
-    return response["answer"]
+    return response["answer"], parents_asign_list

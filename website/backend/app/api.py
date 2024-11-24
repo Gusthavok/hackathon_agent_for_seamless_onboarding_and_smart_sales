@@ -46,7 +46,7 @@ async def chatbot_endpoint(request: ChatbotRequest):
     if not conversation:
         raise HTTPException(status_code=400, detail="Conversation vide.")
     
-    reply, new_url = crud.get_answer_bot(conversation, request.username, request.cart)
+    reply, new_url = crud.get_answer_bot(db, conversation, request.username, request.cart)
     
     return {"reply": reply, 
             "redirect": new_url}

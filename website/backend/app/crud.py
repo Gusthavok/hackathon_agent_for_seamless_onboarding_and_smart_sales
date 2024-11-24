@@ -4,6 +4,9 @@ from models.product import ProductModel  # Supposons que le modèle SQLAlchemy s
 from sqlalchemy.orm import Session
 from typing import List
 
+from utils.llm_file import get_response
+
+
 products_test = [
     {
         "id": 1,
@@ -306,5 +309,7 @@ def create_user(username:str, name: str, email: str, phone: str) -> bool:
 def user_exist(db: Session, username: str):
     return db.query(Users).filter(Users.username == username).first() is not None
 
-def get_answer_bot(conversation: list[dict], username: str, cart: dict):
-    return "toto a toto", "/"
+def get_answer_bot(db: Session, conversation: list[dict], username: str, cart: dict):
+    user = db.query(Users).filter(Users.username == username).first()
+    reponse = get_response(user, conversation, cart, "")
+    return reponse, "/"
