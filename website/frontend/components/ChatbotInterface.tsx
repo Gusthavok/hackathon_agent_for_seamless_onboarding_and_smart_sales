@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button"
 import { API_URL } from "@/app/api"
 import { useRouter } from 'next/navigation'; // Import du hook useRouter
 
+import { getFromLocalStorage } from '@/utils/localStorageHelper';
+
 export default function ChatbotInterface() {
   const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>([
     { text: "Bonjour ! Comment puis-je vous aider aujourd'hui ?", isUser: false },
@@ -15,6 +17,8 @@ export default function ChatbotInterface() {
   const fetchBotResponse = async (conversation: { text: string; isUser: boolean }[]) => {
     try {
       setIsLoading(true)
+      const username = getFromLocalStorage('username'); // Remplacer 'username' par la clé exacte
+      const cart = {"toto": 0}; // Remplacer 'username' par la clé exacte
 
       // Requête au backend avec l'historique complet
       const response = await fetch(API_URL + '/chatbot', {
@@ -22,7 +26,7 @@ export default function ChatbotInterface() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ conversation }), // On envoie tout l'historique
+        body: JSON.stringify({ conversation, username, cart }), // On envoie tout l'historique
       })
 
       if (!response.ok) {

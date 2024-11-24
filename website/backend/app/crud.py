@@ -305,3 +305,6 @@ def create_user(username:str, name: str, email: str, phone: str) -> bool:
 
 def user_exist(db: Session, username: str):
     return db.query(Users).filter(Users.username == username).first() is not None
+
+def get_answer_bot(conversation: list[dict], username: str, cart: dict):
+    return "toto a toto", "/"
