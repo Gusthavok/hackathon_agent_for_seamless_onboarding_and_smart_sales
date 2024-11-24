@@ -7,7 +7,7 @@ import { getFromLocalStorage } from '@/utils/localStorageHelper';
 
 export default function ChatbotInterface() {
   const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>([
-    { text: "Bonjour ! Comment puis-je vous aider aujourd'hui ?", isUser: false },
+    { text: " Hello ! How can I help you today ?", isUser: false },
   ])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
