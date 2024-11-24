@@ -311,6 +311,19 @@ def user_exist(db: Session, username: str):
     return db.query(Users).filter(Users.username == username).first is not None
 
 def get_answer_bot(db: Session, conversation: list[dict], username: str, cart: dict):
-    user = db.query(Users).filter(Users.username == username).first
-    reponse = get_response(user, conversation, cart, "")
+    user = db.query(Users).filter(Users.username == username).first()
+    
+    # Récupérer la réponse et les parent_asin_ids
+    reponse, parent_asin_ids = get_response(user, conversation, cart, "")
+    
+    # Si la liste de produits pour l'utilisateur existe déjà
+    if user.product_for_user is None :
+        user.product_for_user = parent_asin_ids
+    else:
+        if len(parent_asin_ids)>0:
+            user.product_for_user = parent_asin_ids
+
+    # Sauvegarder les changements dans la base de données
+    db.commit()
+    
     return reponse, "/"

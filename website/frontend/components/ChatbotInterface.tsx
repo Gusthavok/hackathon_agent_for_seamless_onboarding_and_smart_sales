@@ -41,13 +41,20 @@ export default function ChatbotInterface() {
       if (data.redirect && data.redirect !== '') {
         // Attendre quelques secondes avant de rediriger (par exemple, 3 secondes)
         setTimeout(() => {
-          router.push(data.redirect); // Rediriger sans recharger la page
-        }, 3000); // Délai de 3 secondes
-
-        return; // Ne pas continuer à ajouter un autre message de bot
+          // Première redirection vers '/temp'
+          router.push('/temp');
+    
+          // Après un délai de 1 seconde, la deuxième redirection
+          setTimeout(() => {
+            if (data.redirect) {
+              router.push(data.redirect);
+            } else {
+              console.error('Redirect URL is not defined');
+            }
+          }, 500);
+        }, 500);    
       }
 
-      // Ajouter la réponse du bot aux messages si pas de redirection
     } catch (error) {
       console.error('Erreur:', error)
       setMessages(prev => [...prev, { text: "Désolé, une erreur s'est produite.", isUser: false }])
