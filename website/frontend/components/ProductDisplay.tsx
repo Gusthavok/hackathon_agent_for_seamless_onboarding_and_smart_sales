@@ -1,15 +1,63 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Product } from '@/types/Product'
 import { useCart } from '@/contexts/CartContext'
 import { Button } from "@/components/ui/button"
-import { products_test } from "@/fake_data/test1"
-const products: Product[] = products_test
+import { API_URL } from '@/app/api'
+import { getFromLocalStorage } from '@/utils/localStorageHelper'; // Importer le helper pour localStorage
 
 export default function ProductDisplay() {
   const { addToCart } = useCart()
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true)
+
+        // Récupérer le username du localStorage
+        const username = getFromLocalStorage('username'); // Remplacer 'username' par la clé exacte
+
+        // Ajouter le username dans les headers de la requête
+        const response = await fetch(API_URL + '/api/products', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Username': username, // Ajouter le username dans les headers
+          },
+        })
+
+        console.log('Response status:', response.status)  // Ajoutez ce log
+        if (!response.ok) {
+          throw new Error(`Erreur: ${response.statusText}`)
+        }
+
+        const data: Product[] = await response.json()
+        console.log('Data fetched:', data)  // Ajoutez ce log
+        setProducts(data)
+      } catch (err: any) {
+        console.error('Error:', err)  // Log plus détaillé pour l'erreur
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+  
+    fetchProducts()
+  }, []) // L'effet ne dépend de rien d'autre
+
+  if (loading) {
+    return <p className="text-center mt-10">Chargement des produits...</p>
+  }
+
+  if (error) {
+    return <p className="text-center text-red-500 mt-10">Erreur: {error}</p>
+  }
 
   return (
     <div className="h-full overflow-y-auto">
@@ -50,4 +98,3 @@ export default function ProductDisplay() {
     </div>
   )
 }
-

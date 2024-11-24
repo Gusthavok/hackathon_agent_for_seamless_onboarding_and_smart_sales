@@ -1,8 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from database import Base, engine, SessionLocal
 from random import random
+from typing import List
+from schemas.product import Product  # Le modèle Pydantic pour sérialiser la réponse
+import uvicorn
+
 
 import crud
 
@@ -24,6 +28,8 @@ app.add_middleware(
 # Modèle pour les données d'entrée
 class ChatbotRequest(BaseModel):
     conversation: list[dict]
+    username: str
+    cart: dict
 
 class ConnexionRequest(BaseModel):
     username: str
@@ -40,9 +46,8 @@ async def chatbot_endpoint(request: ChatbotRequest):
     if not conversation:
         raise HTTPException(status_code=400, detail="Conversation vide.")
     
-    last_message = conversation[-1].get("text", "")
-    reply = f"Vous avez dit : \"{last_message}\". Voici ma réponse."
-    new_url = '/cart' if random()>.5 else '/'
+    reply, new_url = crud.get_answer_bot(conversation, request.username, request.cart)
+    
     return {"reply": reply, 
             "redirect": new_url}
 
@@ -53,6 +58,17 @@ async def connexion_endpoint(request: ConnexionRequest):
     # Vérifier si l'utilisateur existe
     exists = crud.user_exist(db, username)
     return {"exists": exists}
+
+@app.get("/api/products", response_model=List[Product])
+async def products_endpoint(request: Request):
+    username = request.headers.get("Username")
+    # try:
+    print("patato")
+    products = crud.get_products(db, username)  # Récupère les produits depuis la BDD
+    return products  # FastAPI convertit automatiquement les objets en JSON
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des produits: {e}")
+
 
 class UserData(BaseModel):
     username: str
@@ -72,5 +88,4 @@ async def create_user_endpoint(user_data: UserData):
 
 # Exécuter l'application (si vous utilisez un serveur comme Uvicorn)
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=5000)

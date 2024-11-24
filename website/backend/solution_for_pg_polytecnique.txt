@@ -1,0 +1,95 @@
+
+Voici message pour prof qui s'applique agalement a votre cas:
+
+En plus de /tmp, chaque machine comporte une partition /Data de 1To. Cette partition est gérée sur la base des mêmes principes que /tmp mais avec une spécificité importante : le temps de rétention des données est de 180 jours (10j pour /tmp). La sauvegarde est importante car cela reste une dossier qu'on efface sans hésitation (panne matériel/corruption/réinstallation/etc)
+
+Vous pouvez ajouter dans le ".bashrc" des élèves une petite section avec quelques alias comme ceci (ajustez les commandes à votre guise) :
+
+# PgSQL
+export PATH=/usr/local/postgresql-17.0/bin:$PATH
+alias pg_start='pg_ctl -D /Data/augustin.kheng/data/data -l /Data/augustin.kheng/data/logfile start'
+alias pg_stop='pg_ctl -D /Data/augustin.kheng/data/data -l /Data/augustin.kheng/data/logfile stop'
+alias pg_back='[[ -d /users/misc-a/INF553-2018/augustin.kheng/data-backup ]] && mv /users/misc-a/INF553-2018/augustin.kheng/data-backup /Data/augustin.kheng/data-backup.$(date +%F.%H-%M-%S); pg_basebackup -D /users/misc-a/INF553-2018/augustin.kheng/data-backup -Ft -z -P'
+alias pg_rest='[[ -d /Data/augustin.kheng/data ]] && mv /Data/augustin.kheng/data /Data/augustin.kheng/data.$(date +%F.%H-%M-%S); install -d -m 0700 /Data/augustin.kheng/data/data; tar -xvC /Data/augustin.kheng/data/data -f /users/misc-a/INF553-2018/augustin.kheng/data-backup/base.tar.gz &> /dev/null; tar -xvC /Data/augustin.kheng/data/data/pg_wal -f /users/misc-a/INF553-2018/augustin.kheng/data-backup/pg_wal.tar.gz &> /dev/null'
+
+Par la suite il sera assez simple à travailler localement:
+
+[cher ~]$ mkdir -p /Data/augustin.kheng/data/data
+[cher ~]$ initdb -D /Data/augustin.kheng/data/data
+The files belonging to this database system will be owned by user "tbp".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "en_US.UTF-8".
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+fixing permissions on existing directory /Data/pgsql-tbp/data ... ok
+creating subdirectories ... ok
+selecting default max_connections ... 100
+selecting default shared_buffers ... 128MB
+selecting dynamic shared memory implementation ... posix
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+
+WARNING: enabling "trust" authentication for local connections
+You can change this by editing pg_hba.conf or using the option -A, or
+--auth-local and --auth-host, the next time you run initdb.
+
+Success. You can now start the database server using:
+
+pg_ctl -D /Data/pgsql-tbp/data -l logfile start
+
+[cher ~]$ pg_start
+waiting for server to start.... done
+server started
+[cher ~]$ createdb test
+[cher ~]$ psql test
+psql (10.5)
+Type "help" for help.
+
+test=# \list
+List of databases
+Name | Owner | Encoding | Collate | Ctype | Access privileges
+-----------+-------+----------+-------------+-------------+-------------------
+postgres | tbp | UTF8 | en_US.UTF-8 | en_US.UTF-8 |
+template0 | tbp | UTF8 | en_US.UTF-8 | en_US.UTF-8 | =c/tbp +
+| | | | | tbp=CTc/tbp
+template1 | tbp | UTF8 | en_US.UTF-8 | en_US.UTF-8 | =c/tbp +
+| | | | | tbp=CTc/tbp
+test | tbp | UTF8 | en_US.UTF-8 | en_US.UTF-8 |
+(4 rows)
+
+test=# \q
+[cher ~]$ pg_back
+31485/31485 kB (100%), 1/1 tablespace
+[cher ~]$ pg_stop
+waiting for server to shut down.... done
+server stopped
+[cher ~]$ pg_rest
+[cher ~]$ pg_start
+waiting for server to start..... done
+server started
+[cher ~]$ psql test
+psql (10.5)
+Type "help" for help.
+
+test=# \list
+List of databases
+Name | Owner | Encoding | Collate | Ctype | Access privileges
+-----------+-------+----------+-------------+-------------+-------------------
+postgres | tbp | UTF8 | en_US.UTF-8 | en_US.UTF-8 |
+template0 | tbp | UTF8 | en_US.UTF-8 | en_US.UTF-8 | =c/tbp +
+| | | | | tbp=CTc/tbp
+template1 | tbp | UTF8 | en_US.UTF-8 | en_US.UTF-8 | =c/tbp +
+| | | | | tbp=CTc/tbp
+test | tbp | UTF8 | en_US.UTF-8 | en_US.UTF-8 |
+(4 rows)
+
+test=# \q
+[cher ~]$ pg_stop
+waiting for server to shut down.... done
+server stopped
