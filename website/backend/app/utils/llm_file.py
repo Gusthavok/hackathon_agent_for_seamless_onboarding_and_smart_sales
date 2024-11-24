@@ -352,4 +352,4 @@ def get_response(user, conversation, cart, purchase):
         response = retrieval_chain_response_search.invoke({"input": qu, "selected_products": ranked_products, "description": user_description, "conversation": conv})
     elif qualify["answer"] == "ADVICE":
         response = retrieval_chain_advice.invoke({"input": qu, "description": user_description, "conversation": conv})
-    return response["answer"], parents_asign_list
+    return response["answer"]
