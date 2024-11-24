@@ -185,13 +185,13 @@ for _, row in filtered_df.iterrows():
     documents.append(text_content)
 
 # Enregistrer les documents dans un fichier texte
-output_path = r'C:\Users\ngoup\Downloads\documents.txt'
+output_path = '/Data/harold.ngoupeyou/challenge_data/hack/hackathon_agent_for_seamless_onboarding_and_smart_sales/document.txt'
 with open(output_path, "w", encoding="utf-8") as file:
     for doc in documents:
         file.write(doc + "\n---\n")
 
 # RAG database
-loader = TextLoader(r'C:\Users\ngoup\Downloads\documents.txt')
+loader = TextLoader(output_path)
 docs = loader.load()
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
@@ -235,7 +235,7 @@ prompt_advice = ChatPromptTemplate.from_template("""Answer the following questio
 Question: {input}""")
 
 prompt_qualify = ChatPromptTemplate.from_template("""
-You are a classifier for customer questions to determine if they are related to buying products or seeking advice. Use the following context to make your decision:
+You are a classifier for customer questions to determine if they are related to buying products or seeking advice or just a social interaction. Use the following context to make your decision:
 
 <context>
 {context}
@@ -248,72 +248,59 @@ Question: {input}
 Rules for classification:
 1. If the question is related to buying or selecting products, respond strictly with PRODUCT.
 2. If the question is seeking advice or general information, respond strictly with ADVICE.
-3. Do not include any text, explanation, commentary, or formatting outside the single word: PRODUCT or ADVICE.
-4. Any deviation from these rules is considered incorrect. Ensure your response adheres exactly to the rules.
+3. If the question mixes both like what are your recommendations for a certain type of product (e.g., asks for advice/recommendations and mentions specific product features or prices), respond strictly with MIXED.
+4. Do not include any text, explanation, commentary, or formatting outside the single word: PRODUCT or ADVICE or MIXED.
+5. Any deviation from these rules is considered incorrect. Ensure your response adheres exactly to the rules.
 """)
 
 
 prompt_search = ChatPromptTemplate.from_template("""
-Answer the following question based strictly on the provided context. Do not use or invent any information outside the context:
+Answer the following question based only on the provided context:
 
 <context>
 {context}
 </context>
 
-Extract and list parent_asin mentioned in the context, and ensure the following:
-1. Only use parent_asin explicitly mentioned in the context. Do NOT hallucinate or create parent_asin.
-2. Try to include at least 5 parent_asin. Do not add names from outside the context.
-3. Output the results formatted as shown below.
-
+The products names mentionned in the context are the only one you can use, STRICLTY.
+Provide as many product names as possible from the provided context, with a minimum of 2 products and linked with the question of the customer:
 [
   {{
-    "parent_asin": "parent_asin"
+    "product_name": "Product Name"
   }},
   {{
-    "parent_asin": "parent_asin"
+    "product_name": "Product Name"
   }},
   {{
-    "parent_asin": "parent_asin"
+    "product_name": "Product Name"
   }},
   {{
-    "parent_asin": "parent_asin"
+    "product_name": "Product Name"
   }},
   {{
-    "parent_asin": "parent_asin"
+    "product_name": "Product Name"
+  }},
+  {{
+    "product_name": "Product Name"
   }}
 ]
 
 IMPORTANT:
-- Use only parent_asin from the provided context. You must find relevant products from the context, linked with the question of the user.
-- Do NOT add ANY explanations, reasoning, or any additional text outside the JSON list.
+- Use ONLY the product names mentioned in the provided context. If fewer than two directly relevant products are found, include additional products from the context that are less relevant to reach the minimum of twp recommendations.
+- Do NOT hallucinate or make up product names.
+- Do NOT add any additional text, explanation, or formatting outside the [ ].
 
-Here is the question from the customer:
 Question: {input}
 """)
 
-prompt_response_search = ChatPromptTemplate.from_template("""
-You are a helpful, and friendly coach. Answer to the customer's question by presenting one by one the Selected products. You can only use the Selected products provided: 
+prompt_response_search = ChatPromptTemplate.from_template("""Answer the following question based only on the provided context:
 
-Selected Products:
-{selected_products}                                                   
-
-You can also use the context to provide a better answer:                                                   
 <context>
 {context}
 </context>
-                                                          
-You can also use this description of the user:                                          
-{description}
-                                                 
-Before the question, this was the conversation between the user and the coach dont write it, just use it to enhance your knowledge:
-{conversation}
 
-Here is the question from the customer:                                                   
 Question: {input}
-
-
+                                          
 Instructions:
-                                                          -Provide concise answers (1-2 sentences maximum). Avoid using coach/user dialogue format and skip unnecessary details. Stay direct, relevant, and to the point.
 - Begin by directly addressing the user's query with a precise answer.
 - After answering, suggest exactly 2 highly relevant cross-sale articles. Ensure these are complementary to the product mentioned  (e.g., for shoes, suggest socks or a sports watch) and not as the same type than the product mentioned by the user (e.g for a watch don't suggest a watch).
 - If fewer than 2 relevant cross-sale articles are available, explicitly state this and provide tailored advice instead.
@@ -326,7 +313,7 @@ Instructions:
 
 
 Your response should be well-structured, natural, and engaging:
-                                                          """)
+""")
 
 prompt_cross_sales = ChatPromptTemplate.from_template("""Answer the following task by using only the provided context:
 
@@ -367,17 +354,6 @@ retrieval_chain_advice = create_retrieval_chain(vector_knowledge.as_retriever(),
 document_chain_cross_sales = create_stuff_documents_chain(model, prompt_cross_sales)
 retrieval_chain_cross_sales = create_retrieval_chain(vector_knowledge.as_retriever(), document_chain_cross_sales)
 
-convo = [{"text": "Hello, I want to start training marathon, have you advices?", "isUser": True},{"text": """Hello! I'd be happy to help you prepare for a marathon!
-
-Given your interest in level and sprint, I would recommend incorporating interval training into your routine. This type of training involves alternating between high-intensity and low-intensity periods of exercise, which can help improve your speed and endurance.
-
-For example, you could try running at a fast pace for 1 minute, followed by jogging or walking at a slower pace for 2 minutes. Repeat this cycle for a total of 20-30 minutes, gradually increasing the duration and intensity of your high-intensity intervals over time.
-
-Additionally, since you're planning to run a marathon, it's important to build up your endurance with longer runs. Aim to gradually increase your weekly long run distance by no more than 10% each week. This will help your body adapt to the demands of running for an extended period of time.
-
-Lastly, make sure to listen to your body and take rest days as needed. Incorporating cross-training activities like cycling or swimming can also help prevent injury and add some variety to your routine.
-
-I hope these tips are helpful as you prepare for your marathon! Let me know if you have any other questions.""", "isUser": False}, {"text": "Can you buid me a training program ?", "isUser": True}]
 
 def get_response(user, conversation, cart, purchase):
     user_vect = create_user_vector(user)
@@ -391,9 +367,9 @@ def get_response(user, conversation, cart, purchase):
         proposed_products = matching_products["product_name"].tolist()
         #proposed_products = [product["product_name"] for product in proposed_products_data]
         ranked_products = rank_products(user_vect, proposed_products, users, filtered_df)
-        response = retrieval_chain_response_search.invoke({"input": qu, "selected_products": ranked_products, "description": user_description, "conversation": conv})
+        response = retrieval_chain_response_search.invoke({"input": qu, "selected_products": search["answer"]})
     elif qualify["answer"] == "ADVICE":
-        response = retrieval_chain_advice.invoke({"input": qu, "description": user_description, "conversation": conv})
+        response = retrieval_chain_advice.invoke({"input": qu})
     return response["answer"]
 
 def get_cross_sales(user, parent_asin):
