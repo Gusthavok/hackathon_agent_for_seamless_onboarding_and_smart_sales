@@ -316,6 +316,30 @@ Question: {input}
 Write a response to the question as a great coach would do. Avoid mentioning the description of the user but use it to adapt the answer.:
 """)
 
+prompt_cross_sales = ChatPromptTemplate.from_template("""Answer the following task by using only the provided context:
+
+<context>
+{context}
+</context>
+
+Task:
+Suggest strictly 2 cross products related to the following product based on the context.
+                                          
+Product: {product_name}
+                                                      
+You can also use this description of the user to better fit the products:
+{description}
+                                          
+Important:
+- ⁠If fewer than 2 cross products are found in the context, state this explicitly and provide advice instead.
+- Ensure the suggestions are highly relevant and complement the original product.
+- ⁠Only use information present in the provided context. Do not generate or infer information that is not explicitly mentioned.
+                                          
+Example of cross products for a running watch: running clothes or running shoes.
+                                                      
+Be concise, friendly and start with something like: "Based on the product you are interested in, I recommend the following cross products:"
+""")
+
 document_chain_qualify = create_stuff_documents_chain(model, prompt_qualify)
 retrieval_chain_qualify = create_retrieval_chain(vector.as_retriever(), document_chain_qualify)
 
@@ -327,6 +351,9 @@ retrieval_chain_response_search = create_retrieval_chain(vector.as_retriever(), 
 
 document_chain_advice = create_stuff_documents_chain(model, prompt_advice)
 retrieval_chain_advice = create_retrieval_chain(vector_knowledge.as_retriever(), document_chain_advice)
+
+document_chain_cross_sales = create_stuff_documents_chain(model, prompt_cross_sales)
+retrieval_chain_cross_sales = create_retrieval_chain(vector_knowledge.as_retriever(), document_chain_cross_sales)
 
 convo = [{"text": "Hello, I want to start training marathon, have you advices?", "isUser": True},{"text": """Hello! I'd be happy to help you prepare for a marathon!
 
@@ -343,7 +370,7 @@ I hope these tips are helpful as you prepare for your marathon! Let me know if y
 def get_response(user, conversation, cart, purchase):
     user_vect = create_user_vector(user)
     conv, qu = getConversationAndQuestion(conversation)
-    user_description = describe_user(user_vector)
+    user_description = describe_user(user_vect)
     qualify = retrieval_chain_qualify.invoke({"input": qu})
     if qualify["answer"] == "PRODUCT":
         search = retrieval_chain_search.invoke({"input": qu})
@@ -353,4 +380,11 @@ def get_response(user, conversation, cart, purchase):
         response = retrieval_chain_response_search.invoke({"input": qu, "selected_products": ranked_products, "description": user_description, "conversation": conv})
     elif qualify["answer"] == "ADVICE":
         response = retrieval_chain_advice.invoke({"input": qu, "description": user_description, "conversation": conv})
+    return response["answer"]
+
+def get_cross_sales(user, parent_asin):
+    user_vect = create_user_vector(user)
+    user_description = describe_user(user_vect)
+    product_name = filtered_df[filtered_df['parent_asin'] == parent_asin]['title'].values[0]
+    response = retrieval_chain_cross_sales.invoke({"context": f"Product: {product_name}", "description": user_description})
     return response["answer"]
