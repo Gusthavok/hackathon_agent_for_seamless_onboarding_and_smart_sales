@@ -24,11 +24,12 @@ import json
 # Charger le fichier JSON
 df = pd.read_json("final_running_products", lines=True)
 
-api_key= "Hh7heFfENTq0BZAGLaqBodGxkose79gA"
+api_key= "B7KlkMWwYxnDoReHqerP1ubWEbkbHaLi"
 client = Mistral(api_key=api_key)
 
 # Filtrer le DataFrame pour exclure les lignes où 'price' est "None"
 filtered_df = df[df['price'] != "None"]
+filtered_df = filtered_df.sample(50, replace=False)
 filtered_df['average_rating'] = filtered_df['average_rating']/5
 filtered_df = filtered_df.drop_duplicates(subset='parent_asin', keep='first')
 
@@ -219,22 +220,19 @@ def getConversationAndQuestion(conversation):
         else:
             conv += "Coach: " + c["text"] + "\n"
 
-prompt_advice = ChatPromptTemplate.from_template("""Answer the question based only on the provided context:
+prompt_advice = ChatPromptTemplate.from_template("""Answer the following question based only on the provided context:
 
 <context>
 {context}
 </context>
-                                                 
-You can also use this description of the user:                                          
-{description}
-                                                 
-Before the question, this was the conversation between the user and the coach:
-{conversation}
-                                          
-Here is the question of the user:
-Question: {input}
-                                          
-Answer as a great coach would do, being friendly and well-structured. Avoid mentioning the description of the user but use it to adapt the answer.:""")
+- Act as a coaching and training expert                            
+ - Absolutely, produce a concise answer, not in more than two paragraph, i mean very concise
+-At the end of your advice, ask wether the client want a suggestion on a product related to the advice
+- If the context is empty or irrelevant, respond with: "I could not find any relevant information to answer your question. Can you try another thing please?"
+- Do not guess or make up any information. Provide only factual answers based on the context.
+
+
+Question: {input}""")
 
 prompt_qualify = ChatPromptTemplate.from_template("""
 You are a classifier for customer questions to determine if they are related to buying products or seeking advice. Use the following context to make your decision:
@@ -307,19 +305,27 @@ You can also use the context to provide a better answer:
 You can also use this description of the user:                                          
 {description}
                                                  
-Before the question, this was the conversation between the user and the coach:
+Before the question, this was the conversation between the user and the coach dont write it, just use it to enhance your knowledge:
 {conversation}
 
 Here is the question from the customer:                                                   
 Question: {input}
 
 
-Guidelines for your response:
-- ⁠Be precise and to the point.
-- ⁠Avoid unnecessary details or long explanations.
-- Limit your response to 3-4 sentences at most.
+Instructions:
+                                                          -Provide concise answers (1-2 sentences maximum). Avoid using coach/user dialogue format and skip unnecessary details. Stay direct, relevant, and to the point.
+- Begin by directly addressing the user's query with a precise answer.
+- After answering, suggest exactly 2 highly relevant cross-sale articles. Ensure these are complementary to the product mentioned  (e.g., for shoes, suggest socks or a sports watch) and not as the same type than the product mentioned by the user (e.g for a watch don't suggest a watch).
+- If fewer than 2 relevant cross-sale articles are available, explicitly state this and provide tailored advice instead.
+- Avoid repeating or mentioning phrases like "based on the context" in your response.
+- Be concise and limit your response to a maximum of 2 short paragraphs.
+- Ensure all information comes directly from the context. Do not generate or assume any details not explicitly provided.
+ - Avoid repeating full product descriptions from the context; focus on summarizing key details (e.g., name, price, or one essential feature).
+- If the context is empty or irrelevant, respond with: "I could not find any relevant information to answer your question. Can you try another thing please?"
+- Do not guess or make up any information. Provide only factual answers based on the context.
 
-Now, provide your answer to the question as a great coach would do:
+
+Your response should be well-structured, natural, and engaging:
                                                           """)
 
 prompt_cross_sales = ChatPromptTemplate.from_template("""Answer the following task by using only the provided context:
