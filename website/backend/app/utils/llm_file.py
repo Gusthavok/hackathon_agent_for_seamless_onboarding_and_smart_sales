@@ -36,7 +36,7 @@ client = Mistral(api_key=api_key)
 
 # Filtrer le DataFrame pour exclure les lignes où 'price' est "None"
 filtered_df = df[df['price'] != "None"]
-filtered_df = filtered_df.sample(500, replace=False)
+filtered_df = filtered_df.sample(100, replace=False)
 filtered_df['average_rating'] = filtered_df['average_rating']/5
 filtered_df = filtered_df.drop_duplicates(subset='parent_asin', keep='first')
 

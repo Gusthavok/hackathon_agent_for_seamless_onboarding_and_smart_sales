@@ -287,12 +287,13 @@ products_test = [
 ]
 
 
-def get_products(db: Session, username: str, if_fake_data: bool = True) -> List[ProductModel]:
+def get_products(db: Session, username: str, if_fake_data: bool = False):
     if if_fake_data:
         return [ProductModel(**product) for product in products_test]
-    
+    print(username)
     product_for_user = db.query(Users.product_for_user).filter(Users.username == username).first()[0]
-    return [item for item in db.query(ProductModel).filter(ProductModel.parent_asin.in_(product_for_user)).all()]
+    print('#######', product_for_user)
+    return [item for item in db.query(ProductModel).filter(ProductModel.parent_asin.in_(product_for_user)).limit(10).all()]
 
 def create_user(username:str, name: str, email: str, phone: str) -> bool:
 

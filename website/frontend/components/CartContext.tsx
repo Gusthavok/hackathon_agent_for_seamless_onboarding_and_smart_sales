@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { Product } from '@/types/Product'
+import { get } from 'http'
 
 interface CartItem extends Product {
   quantity: number
