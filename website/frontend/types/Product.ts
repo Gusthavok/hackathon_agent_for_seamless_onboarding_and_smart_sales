@@ -17,9 +17,7 @@ export interface Product {
   videos: { title: string; url: string }[]
   store: string
   categories: string[]
-  details: {
-    [key: string]: string
-  }
+
   parent_asin: string
   bought_together: string[] | null
 }

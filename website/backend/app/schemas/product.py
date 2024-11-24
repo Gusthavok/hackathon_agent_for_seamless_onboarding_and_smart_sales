@@ -14,7 +14,6 @@ class Video(BaseModel):
     url: str    
 
 class Product(BaseModel):
-    id:  float
     main_category: str
     title: str
     average_rating: float
@@ -26,6 +25,5 @@ class Product(BaseModel):
     videos: List[Video]
     store: str
     categories: List[str]
-    details: Dict[str, str]
     parent_asin: str
     bought_together: Optional[List[str]]
