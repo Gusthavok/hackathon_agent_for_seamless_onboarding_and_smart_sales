@@ -1,3 +1,6 @@
+LIEN VERS VIDEO DE DEMO : https://drive.google.com/file/d/1c1IU-iX1jSEYFnjgboiQQDguI4L4AQWf/view?usp=sharing 
+
+
 README pitch :
 
 L’objectif de ce projet était de révolutionner l’expérience client de la vente d’affaires de running en centralisant sur une unique plateforme le coach sportif, le vendeur spécialisé, l’expert en sciences du sport et le diététicien, tous personnalisés à l’utilisateur et regroupés dans un unique chatbot. 

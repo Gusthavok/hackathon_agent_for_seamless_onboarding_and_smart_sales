@@ -51,8 +51,8 @@ export default function ChatbotInterface() {
             } else {
               console.error('Redirect URL is not defined');
             }
-          }, 500);
-        }, 500);    
+          }, 1000);
+        }, 1000);    
       }
 
     } catch (error) {
