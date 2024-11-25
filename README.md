@@ -3,13 +3,13 @@ LIEN VERS VIDEO DE DEMO : https://drive.google.com/file/d/1c1IU-iX1jSEYFnjgboiQQ
 
 README pitch :
 
-L’objectif de ce projet était de révolutionner l’expérience client de la vente d’affaires de running en centralisant sur une unique plateforme le coach sportif, le vendeur spécialisé, l’expert en sciences du sport et le diététicien, tous personnalisés à l’utilisateur et regroupés dans un unique chatbot. 
+L’objectif de ce projet était de révolutionner l’expérience client de la vente d’affaires de sport/running en centralisant sur une unique plateforme le coach sportif, le vendeur spécialisé, l’expert en sciences du sport et le diététicien, tous personnalisés à l’utilisateur et regroupés dans un unique chatbot. 
 
-Ce chatbot, entraîné sur une base de données d’articles scientifiques sur le sport créée par nos soins, est capable de repérer lorsque l’utilisateur ne cherche que des conseils. Il ne lui propose alors pas des produits à acheter, mais lui confectionne plutôt sur mesure des programmes d’entraînement, des conseils de pratique ou encore de gestion des blessures.
+Ce chatbot, entraîné sur une base de données d’articles scientifiques sur le sport créée par nos soins, est capable de repérer lorsque l’utilisateur ne cherche que des conseils. Il ne lui propose alors pas des produits à acheter, mais lui confectionne plutôt sur mesure des programmes d’entraînement, des conseils de pratique ou encore de gestion des blessures. Cela permet de créer un véritable attachement de l'utilisateur à la plateforme, qui n'est plus seulement une plateforme de vente.
 
-Mais ce chatbot est également un vendeur connecté à la base de données de vente. Il détecte lorsque le client a besoin désire acheter un produit, trouve les plus pertinents dans la base, les classe par ordre d’intérêt en utilisant les produits achetés par des utilisateurs similaires, puis les affiche avec leurs photos. L’utilisateur peut ensuite directement interagir avec les produits affichés, pour les ajouter à son panier ou avoir des détails. Lorsque l’utilisateur est intéressé par un produit, le chatbot propose enfin des produits complémentaires à acheter.
+Mais ce chatbot est bien sûr également un vendeur connecté à la base de données de vente. Il détecte lorsque le client désire acheter un article, trouve les produits les plus pertinents dans la base, les classe par ordre d’intérêt en utilisant les produits achetés par des utilisateurs similaires, puis les affiche avec leurs photos et descriptions. L’utilisateur peut ensuite directement interagir avec les produits affichés, pour les ajouter à son panier ou avoir des détails. Lorsque l’utilisateur est intéressé par un produit, le chatbot propose également des produits complémentaires à acheter.
 
-Finalement, ce chatbot est intégré à une interface agréable. Lors de la première connexion au site, l’utilisateur se voit posé plusieurs questions pour définir son profil. Lorsqu’un produit est proposé, une image et les informations sur celui-ci s’affichent. L’utilisateur peut l’ajouter au panier et voir son panier.
+Enfin, ce chatbot est intégré à une interface agréable. Lors de la première connexion au site, l’utilisateur se voit posé plusieurs questions pour définir son profil. Lorsqu’un produit est proposé, une image et les informations sur celui-ci s’affichent. L’utilisateur peut l’ajouter au panier et voir son panier.
 
 README démarche scientifique :
 
@@ -41,7 +41,15 @@ Afin de proposer une meilleure expérience client, et pour ne pas que l'utilisat
 
 4) Pour le site :
 
+Nous avons décidé de créer un vrai site avec différentes pages et des liens entre elles, afin d'éviter de se limiter à une page statique et notamment avoir un accueil nouvel utilisateur et une page panier. En particulier, le chatbot peut naviguer sur le site et interagir avec celui-ci.
 
+5) Points à creuser :
+
+Un regret sur certaines fonctionnalités :
+- De nombreux bugs durant l'affichage des produits recommandés du a des problèmes de gestion entre les base de données.
+- Pour le moment on ne peut pas créer de nouveau compte utilisateur.  
+- La capacité de reprendre la conversation : si un utilisateur parle d'un entraînement au marathon, nous aurions aimé enregistrer le dernier intérêt de l'utilisateur et lui redemander lors de sa connexion suivante par exemple comment son entraînement s'est passé. Cela permettrait de renforcer la sensation de suivi et de personnalisation.
+- proposer certaines conditions (taille du panier, produits déjà achetés...) pour que le chatbot propose à l'utilisateur des réductions, afin de renforcer l'aspect commercial personnalisé du chatbot.
 
 README technique :
 
@@ -89,4 +97,5 @@ FRONTEND :
 4.⁠ ⁠lancer le serveur frontend : 
  $ npm run dev
 
-pour accéder au login : rajouter dans l'URL /login
+pour accéder au login : rajouter dans l'URL /login
+utiliser un username prédéfini "toto_{x}" pour x entre 0 et 6
