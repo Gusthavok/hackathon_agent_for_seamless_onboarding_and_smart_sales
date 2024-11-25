@@ -21,6 +21,7 @@ import pandas as pd
 import random
 import json
 
+import math
 
 data = []
 # Charger le fichier JSON
@@ -37,7 +38,7 @@ client = Mistral(api_key=api_key)
 
 # Filtrer le DataFrame pour exclure les lignes où 'price' est "None"
 filtered_df = df[df['price'] != "None"]
-filtered_df = filtered_df.sample(50, replace=False)
+filtered_df = filtered_df.sample(500, replace=False)
 filtered_df['average_rating'] = filtered_df['average_rating']/5
 filtered_df = filtered_df.drop_duplicates(subset='parent_asin', keep='first')
 
@@ -64,12 +65,13 @@ def create_user_vector(user):
     'gender': user.genre,
     'age': user.age,
     'health': user.sante,
-    'purchase': []
+    'purchase': [], 
+    'level': 0.5,
     }
     return user_vect
 
-def describe_user(user):
-    user_vect = create_user_vector(user)
+def describe_user(user_vect):
+    # user_vect = create_user_vector(user)
     description = []
     
     for key, value in user_vect.items():
@@ -141,7 +143,7 @@ def calculate_similarity(user1, user2):
     similarity = cosine_similarity(num_user1, num_user2)
     return similarity[0][0]
 
-def rank_products(input_user, proposed_products, all_users, filtered_df):
+def rank_products(input_user, list_parent_asin, all_users, filtered_df):
     # Step 1: Calculate similarity with all other users
     similarities = [
         (other_user, calculate_similarity(input_user, other_user))
@@ -149,7 +151,7 @@ def rank_products(input_user, proposed_products, all_users, filtered_df):
     ]
     
     # Step 2: Find products bought by similar users
-    product_scores = {product: 0 for product in proposed_products}
+    product_scores = {product: 0 for product in list_parent_asin}
     for other_user, similarity in similarities:
         for product in other_user['purchase']:
             if product in product_scores:
@@ -157,7 +159,7 @@ def rank_products(input_user, proposed_products, all_users, filtered_df):
     
     # Step 3: Combine with average ratings
     for product in product_scores:
-        matching_rows = filtered_df[filtered_df['title'].str.strip().str.lower() == product.strip().lower()]
+        matching_rows = filtered_df[filtered_df['parent_asin'].str.strip().str.lower() == product.strip().lower()]
         if not matching_rows.empty:
             product_rating = matching_rows['average_rating'].values[0]
         else:
@@ -167,7 +169,10 @@ def rank_products(input_user, proposed_products, all_users, filtered_df):
     # Step 4: Rank products by score
     ranked_products = sorted(product_scores.items(), key=lambda x: x[1], reverse=True)
     ranking = [item[0] for item in ranked_products]
-    ranking_final = [ranking[0], ranking[1]]
+    if len(ranking)>=2:
+        ranking_final = [ranking[0], ranking[1]]
+    else:
+        ranking_final = ranking
     return ranking_final
 
 documents = []
@@ -193,7 +198,7 @@ for _, row in filtered_df.iterrows():
     documents.append(text_content)
 
 # Enregistrer les documents dans un fichier texte
-output_path = '/Data/harold.ngoupeyou/challenge_data/hack/hackathon_agent_for_seamless_onboarding_and_smart_sales/document.txt'
+output_path = './harold_doc.txt'
 with open(output_path, "w", encoding="utf-8") as file:
     for doc in documents:
         file.write(doc + "\n---\n")
@@ -211,7 +216,7 @@ vector = FAISS.from_documents(documents, embeddings)
 model = ChatMistralAI(mistral_api_key=api_key)
 
 # RAG knowledge
-loader_knowledge = TextLoader('/Data/harold.ngoupeyou/challenge_data/hack/hackathon_agent_for_seamless_onboarding_and_smart_sales/website/backend/app/utils/final_data.txt')
+loader_knowledge = TextLoader('./utils/final_data.txt')
 docs_knowledge = loader_knowledge.load()
 
 documents_knowledge = text_splitter.split_documents(docs_knowledge)
@@ -266,41 +271,47 @@ Rules for classification:
 
 
 prompt_search = ChatPromptTemplate.from_template("""
-Answer the following question based only on the provided context:
+Answer the following question based strictly on the provided context. Do not use or invent any information outside the context:
 
 <context>
 {context}
 </context>
 
-The products names mentionned in the context are the only one you can use, STRICLTY.
-Provide as many product names as possible from the provided context, with a minimum of 2 products and linked with the question of the customer:
+Extract and list parent_asin mentioned in the context, and ensure the following:
+1. Only use parent_asin explicitly mentioned in the context. Do NOT hallucinate or create parent_asin.
+2. For each parent_asin, add the title of the associated item. 
+3. Try to include at least 5 parent_asin. Do not add names from outside the context.
+4. Output the results formatted as shown below.
+
 [
   {{
-    "product_name": "Product Name"
+    "parent_asin": parent_asin
+    "title": title
   }},
   {{
-    "product_name": "Product Name"
+    "parent_asin": parent_asin
+    "title": title
   }},
   {{
-    "product_name": "Product Name"
+    "parent_asin": parent_asin
+    "title": title
   }},
   {{
-    "product_name": "Product Name"
+    "parent_asin": parent_asin
+    "title": title
   }},
   {{
-    "product_name": "Product Name"
+    "parent_asin": parent_asin
+    "title": title
   }},
-  {{
-    "product_name": "Product Name"
-  }}
 ]
 
 IMPORTANT:
-- Use ONLY the product names mentioned in the provided context. If fewer than two directly relevant products are found, include additional products from the context that are less relevant to reach the minimum of twp recommendations.
-- Do NOT hallucinate or make up product names.
-- Do NOT add any additional text, explanation, or formatting outside the [ ].
+- Use only parent_asin from the provided context. You must find relevant products from the context, linked with the question of the user.
+- Do NOT add ANY explanations, reasoning, or any additional text outside the JSON list.
 
-Question: {input}
+Here is the question from the customer:
+Question: {input}
 """)
 
 prompt_response_search = ChatPromptTemplate.from_template("""Answer the following question based only on the provided context:
@@ -323,7 +334,7 @@ Instructions:
 - Do not guess or make up any information. Provide only factual answers based on the context.
 
 
-Your response should be well-structured, natural, and engaging:
+Your response should be well-structured, natural, and engaging. Answer as a friendly coach, but be concise:
 """)
 
 prompt_cross_sales = ChatPromptTemplate.from_template("""Answer the following task by using only the provided context:
@@ -377,18 +388,31 @@ def get_response(user, conversation, cart, purchase):
         try:
             proposed_products_data = json.loads(search['answer'])
         except:
-            proposed_products_data = {}
-        matching_products = filtered_df[filtered_df["parent_asin"].isin(proposed_products_data)]
-        proposed_products = matching_products["product_name"].tolist()
-        proposed_products = [product["product_name"] for product in proposed_products_data]
-        ranked_products = rank_products(user_vect, proposed_products, users, filtered_df)
-        response = retrieval_chain_response_search.invoke({"input": qu, "selected_products": search["answer"]})
-        result = filtered_df[filtered_df['product_name'].isin(ranked_products)]
-        result = result.set_index('product_name').reindex(ranked_products)
-        parent_asin_list = result['parent_asin'].tolist()
+            proposed_products_data = []
+        print("proposed_products_data", proposed_products_data)
+        parent_asin_list = [product["parent_asin"] for product in proposed_products_data]
+        print(parent_asin_list)
+        proposed_products = [product["title"] for product in proposed_products_data]
+        print("proposed_products", proposed_products)
+        # proposed_products = [product["product_name"] for product in proposed_products_data]
+        ranked_parent_asin = rank_products(user_vect, parent_asin_list, users, filtered_df)
+        print("ranked_parent_asin", ranked_parent_asin)
+        
+        result = filtered_df[filtered_df['parent_asin'].isin(ranked_parent_asin)]
+        print(result)
+        
+        result = result.set_index('parent_asin').reindex(ranked_parent_asin)
+        print(result)
+        
+        response = retrieval_chain_response_search.invoke({"input": qu, "selected_products": result["title"]})
+
+        parent_asin_list = ranked_parent_asin
     elif qualify["answer"] == "ADVICE":
         response = retrieval_chain_advice.invoke({"input": qu})
-    return response["answer"], parent_asin_list
+    
+    # if len(parent_asin_list)>0 and math.isnan(parent_asin_list[0]):
+    #     parent_asin_list = []
+    return response["answer"], parent_asin_list#parent_asin_list
 
 def get_cross_sales(user, parent_asin):
     user_vect = create_user_vector(user)

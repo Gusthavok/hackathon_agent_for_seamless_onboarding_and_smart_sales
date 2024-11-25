@@ -21,8 +21,16 @@ import pandas as pd
 import random
 import json
 
+
+data = []
 # Charger le fichier JSON
-df = pd.read_json("final_running_products", lines=True)
+with open("./utils/final_running_products", "r") as file:
+    for line in file:
+        # Convertir chaque ligne en un dictionnaire Python
+        data.append(json.loads(line))
+
+# Créer un DataFrame à partir des données
+df = pd.DataFrame(data)
 
 api_key= "B7KlkMWwYxnDoReHqerP1ubWEbkbHaLi"
 client = Mistral(api_key=api_key)
@@ -56,12 +64,12 @@ def create_user_vector(user):
     'gender': user.genre,
     'age': user.age,
     'health': user.sante,
-    'purchase': []
+    'purchase': [], 
+    'level': .3
     }
     return user_vect
 
-def describe_user(user):
-    user_vect = create_user_vector(user)
+def describe_user(user_vect):
     description = []
     
     for key, value in user_vect.items():
@@ -159,7 +167,10 @@ def rank_products(input_user, proposed_products, all_users, filtered_df):
     # Step 4: Rank products by score
     ranked_products = sorted(product_scores.items(), key=lambda x: x[1], reverse=True)
     ranking = [item[0] for item in ranked_products]
-    ranking_final = [ranking[0], ranking[1]]
+    if len(ranking)>=2:
+        ranking_final = [ranking[0], ranking[1]]
+    else:
+        ranking_final=ranking
     return ranking_final
 
 documents = []
@@ -185,7 +196,7 @@ for _, row in filtered_df.iterrows():
     documents.append(text_content)
 
 # Enregistrer les documents dans un fichier texte
-output_path = '/Data/harold.ngoupeyou/challenge_data/hack/hackathon_agent_for_seamless_onboarding_and_smart_sales/document.txt'
+output_path = './utils/harold_doc.txt'
 with open(output_path, "w", encoding="utf-8") as file:
     for doc in documents:
         file.write(doc + "\n---\n")
@@ -203,8 +214,8 @@ vector = FAISS.from_documents(documents, embeddings)
 model = ChatMistralAI(mistral_api_key=api_key)
 
 # RAG knowledge
-loader_knowledge = TextLoader('final_data.txt')
-docs_knowledge = loader.load()
+loader_knowledge = TextLoader('./utils/final_data.txt')
+docs_knowledge = loader_knowledge.load()
 
 documents_knowledge = text_splitter.split_documents(docs_knowledge)
 
@@ -225,11 +236,13 @@ prompt_advice = ChatPromptTemplate.from_template("""Answer the following questio
 <context>
 {context}
 </context>
+                                                 
 - Act as a coaching and training expert                            
  - Absolutely, produce a concise answer, not in more than two paragraph, i mean very concise
--At the end of your advice, ask wether the client want a suggestion on a product related to the advice
 - If the context is empty or irrelevant, respond with: "I could not find any relevant information to answer your question. Can you try another thing please?"
 - Do not guess or make up any information. Provide only factual answers based on the context.
+-"Provide concise and actionable advice without referencing the context explicitly. Focus only on delivering relevant recommendations in a clear and direct manner."
+- At the end don't forget to mention that he can ask you any other questions and that you are here to assist him
 
 
 Question: {input}""")
@@ -251,6 +264,7 @@ Rules for classification:
 3. If the question mixes both like what are your recommendations for a certain type of product (e.g., asks for advice/recommendations and mentions specific product features or prices), respond strictly with MIXED.
 4. Do not include any text, explanation, commentary, or formatting outside the single word: PRODUCT or ADVICE or MIXED.
 5. Any deviation from these rules is considered incorrect. Ensure your response adheres exactly to the rules.
+ "Provide concise and actionable advice without referencing the context explicitly. Focus only on delivering relevant recommendations in a clear and direct manner."
 """)
 
 
@@ -360,17 +374,25 @@ def get_response(user, conversation, cart, purchase):
     conv, qu = getConversationAndQuestion(conversation)
     user_description = describe_user(user_vect)
     qualify = retrieval_chain_qualify.invoke({"input": qu})
+    parent_asin_list = []
     if qualify["answer"] == "PRODUCT":
         search = retrieval_chain_search.invoke({"input": qu})
-        proposed_products_data = json.loads(search['answer'])
+        try:
+            proposed_products_data = json.loads(search['answer'])
+        except:
+            proposed_products_data = {}
         matching_products = filtered_df[filtered_df["parent_asin"].isin(proposed_products_data)]
-        proposed_products = matching_products["product_name"].tolist()
-        #proposed_products = [product["product_name"] for product in proposed_products_data]
+        proposed_products = matching_products["title"].tolist()
+        # proposed_products = [product["product_name"] for product in proposed_products_data]
         ranked_products = rank_products(user_vect, proposed_products, users, filtered_df)
         response = retrieval_chain_response_search.invoke({"input": qu, "selected_products": search["answer"]})
+        result = filtered_df[filtered_df['title'].isin(ranked_products)]
+        result = result.set_index('title').reindex(ranked_products)
+        parent_asin_list = result['parent_asin'].tolist()
     elif qualify["answer"] == "ADVICE":
         response = retrieval_chain_advice.invoke({"input": qu})
-    return response["answer"]
+        print(parent_asin_list)
+    return response["answer"], parent_asin_list
 
 def get_cross_sales(user, parent_asin):
     user_vect = create_user_vector(user)

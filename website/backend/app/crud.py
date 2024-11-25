@@ -312,6 +312,7 @@ def user_exist(db: Session, username: str):
 
 def get_answer_bot(db: Session, conversation: list[dict], username: str, cart: dict):
     user = db.query(Users).filter(Users.username == username).first()
+    print("#######fdsq", type(user))
     
     # Récupérer la réponse et les parent_asin_ids
     reponse, parent_asin_ids = get_response(user, conversation, cart, "")
